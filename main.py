@@ -559,7 +559,7 @@ def download(baseurl):
 # main
 #
 try:
-  print('** Welcome to BenfordApp **')
+  print('** Welcome to BirdApp **')
   print()
 
   # eliminate traceback so we just get error message:
