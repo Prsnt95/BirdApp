@@ -613,6 +613,36 @@ try:
   if lastchar == "/":
     baseurl = baseurl[:-1]
 
+
+  # def test():
+  #   print("testing EBIRD")
+  #   API_KEY = "nb5l4s4jlcl4"
+  #   BASE_URL = "https://api.ebird.org/v2"
+
+  #   # Headers for authentication
+  #   headers = {
+  #       "X-eBirdApiToken": API_KEY
+  #   }
+
+  #   # Example endpoint: Recent observations of a species
+  #   def get_recent_observations(region):
+  #       url = f"{BASE_URL}/data/obs/{region}/recent"
+  #       response = requests.get(url, headers=headers)
+
+  #       if response.status_code == 200:
+  #           return response.json()  # Parse JSON response
+  #       else:
+  #           print(f"Error: {response.status_code}")
+  #           return None
+
+  #   # Example usage
+  #   region_code = "US-IL"  # Illinois, USA
+  #   data = get_recent_observations(region_code)
+  #   print(data)
+
+
+
+
   #
   # main processing loop:
   #
@@ -630,6 +660,8 @@ try:
       upload(baseurl)
     elif cmd == 5:
       download(baseurl)
+    # elif cmd==9:
+    #   test()
     else:
       print("** Unknown command, try again...")
     #
