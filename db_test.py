@@ -309,92 +309,75 @@ def nearby_birds(baseurl):
         logging.error(e)
         return
 
-
+#############################
+# Here's what download_trip will receive from the Lambda:
+#
+#         trip_data = {
+        #     "id": row[0],
+        #     "bird_name": row[1],
+        #     "start_loc": row[2],
+        #     "end_loc": row[3],
+        #     "trans_mode": row[4],
+        #     "distance": row[5],
+        #     "instructions": row[6]
+        # }
+#
+#
 
 def download_trip(baseurl):
-  """
-  Prompts the user for the trip id, and downloads
-  that trip (into .txt).
+    """
+    Prompts the user for the trip id, and downloads
+    that trip (into .txt).
 
-  Parameters
-  ----------
-  baseurl: baseurl for web service
+    Parameters
+    ----------
+    baseurl: baseurl for web service
 
-  Returns
-  -------
-  nothing
-  """
+    Returns
+    -------
+    nothing
+    """
   
-  try:
-    print("Enter trip id>")
-    tripid = input()
+    try:
+        print("Enter trip id>")
+        tripid = input()
     
-    #
-    # call the web service:
-    #
+        #
+        # call the web service:
+        #
 
-    api = '/download/'
-    url = baseurl + api + tripid
-    res = requests.get(url)
+        api = '/downloadtrip/'
+        url = baseurl + api + tripid
+        res = requests.get(url)
 
-    #
-    # let's look at what we got back:
-    #
-    if res.status_code == 200: #success
-      pass
-    # elif res.status_code == 400: # no such job
-    #   body = res.json()
-    #   print(body)
-    #   return
-    # elif res.status_code in [480, 481, 482]:  # uploaded
-    #   msg = res.json()
-    #   print("No results available yet...")
-    #   print("Job status:", msg)
-    #   return
-    else:
-      # failed:
-      print("Failed with status code:", res.status_code)
-      print("url: " + url)
-      if res.status_code == 500:
-        # we'll have an error message
-        body = res.json()
-        print("Error message:", body)
-      #
-      return
-      
-    #
-    # if we get here, status code was 200, so we
-    # have results to deserialize and display:
-    #
-    
-    body = ""
-    
-    # deserialize the message body:
-    # TODO: body = ???
 
-    datastr = body
+        # TODO
+        # once you receive the res.json grab the fields and then create a txt
 
-    #
-    # encode the data string to obtain the raw bytes in base64,
-    # then call b64decode to obtain the original raw bytes.
-    # Finally, decode() the bytes to obtain the results as a 
-    # printable string.
-    #
-    
-    results = ""
-    
-    # TODO: base64_bytes = ???
-    # TODO: bytes = ???
-    # TODO: results = ???
 
-    print(results)
-    return
+        #
+        # let's look at what we got back:
+        #
+        if res.status_code == 200: #success
+            # TODO ()
+            body = res.json()
+            print(body)  # printing response body for now...
+            # etc......
+        else:
+            # Failed:
+            print("Failed with status code:", res.status_code)
+            print("url: " + url)
+            if res.status_code == 500:
+                # we'll have an error message
+                body = res.json()
+                print("Error message:", body)
+            return
 
-  except Exception as e:
-    logging.error("**ERROR: download() failed:")
-    logging.error("url: " + url)
-    logging.error(e)
-    return
+    except Exception as e:
+        logging.error("**ERROR: nearby_birds() failed:")
+        logging.error("url: " + url)
+        logging.error(e)
+        return
 
 
 

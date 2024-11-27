@@ -1,9 +1,85 @@
-
-
 ### ALL THE LAMBDA FUNCTIONS
 
 
 
+# Same as trips func, it requires datatier, benford config etc. (see trips func below)
+
+
+import json
+import datatier
+from configparser import ConfigParser
+
+def lambda_handler(event, context):
+    try:
+        print("**STARTING**")
+        print("**lambda: proj_download_trip**")
+
+        # Read database configuration
+        config_file = 'benfordapp-config.ini'
+        configur = ConfigParser()
+        configur.read(config_file)
+
+        rds_endpoint = configur.get('rds', 'endpoint')
+        rds_portnum = int(configur.get('rds', 'port_number'))
+        rds_username = configur.get('rds', 'user_name')
+        rds_pwd = configur.get('rds', 'user_pwd')
+        rds_dbname = configur.get('rds', 'db_name')
+
+        # Extract trip ID from the event
+        if "pathParameters" in event and "id" in event["pathParameters"]:
+            trip_id = event["pathParameters"]["id"]
+        else:
+            raise ValueError("The 'id' parameter is required in pathParameters")
+
+        print(f"Fetching trip with ID: {trip_id}")
+
+        # Open connection to the database
+        print("**Opening connection to database**")
+        dbConn = datatier.get_dbConn(rds_endpoint, rds_portnum, rds_username, rds_pwd, rds_dbname)
+
+        # Query the trips table
+        print(f"**Querying trips table for ID {trip_id}**")
+        sql = "SELECT * FROM trips WHERE id = %s;"
+        row = datatier.retrieve_one_row(dbConn, sql, [trip_id])
+
+        if not row:
+            print(f"**No trip found with ID {trip_id}**")
+            return {
+                'statusCode': 404,
+                'body': json.dumps({"error": "No trip found with the given ID"})
+            }
+
+        # Map the row to JSON-friendly format
+        trip_data = {
+            "id": row[0],
+            "bird_name": row[1],
+            "start_loc": row[2],
+            "end_loc": row[3],
+            "trans_mode": row[4],
+            "distance": row[5],
+            "instructions": row[6]
+        }
+
+        print(f"**Trip data: {trip_data}**")
+        
+        # Return the trip details
+        return {
+            'statusCode': 200,
+            'body': json.dumps(trip_data)
+        }
+
+    except ValueError as ve:
+        print("**VALUE ERROR**", str(ve))
+        return {
+            'statusCode': 400,
+            'body': json.dumps({"error": str(ve)})
+        }
+    except Exception as err:
+        print("**ERROR**", str(err))
+        return {
+            'statusCode': 500,
+            'body': json.dumps({"error": "An internal server error occurred"})
+        }
 
 
 
