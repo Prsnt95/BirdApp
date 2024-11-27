@@ -263,57 +263,52 @@ def region_birds(baseurl):
 
   
 def nearby_birds(baseurl):
-  """
-  Outputs recent bird observations nearby
+    """
+    Outputs recent bird observations nearby
 
-  Parameters
-  ----------
-  baseurl: baseurl for web service
+    Parameters
+    ----------
+    baseurl: baseurl for web service
 
-  Returns
-  -------
-  nothing
-  """
+    Returns
+    -------
+    nothing
+    """
 
-  try:
-    #
-    # call the web service:
-    #
-    api = '/nearbird'
-    url = baseurl + api
+    try:
+        #
+        # call the web service:
+        #
+        api = '/nearbird'
+        print("Enter starting address>")
+        addr = input()
 
-    # res = requests.get(url)
-    res = requests.get(url)
+        # Construct the full URL with query parameters
+        url = f"{baseurl}{api}?address={addr}"
+        res = requests.get(url)
 
-    #
-    # let's look at what we got back:
-    #
-    if res.status_code == 200: #success
-      pass
-    else:
-      # failed:
-      print("Failed with status code:", res.status_code)
-      print("url: " + url)
-      if res.status_code == 500:
-        # we'll have an error message
-        body = res.json()
-        print("Error message:", body)
-      #
-      return
+        #
+        # let's look at what we got back:
+        #
+        if res.status_code == 200:  # Success
+            body = res.json()
+            print(body)  # Print the response data
+        else:
+            # Failed:
+            print("Failed with status code:", res.status_code)
+            print("url: " + url)
+            if res.status_code == 500:
+                # we'll have an error message
+                body = res.json()
+                print("Error message:", body)
+        return
 
-    #
-    # deserialize and extract ustripsers:
-    #
-    body = res.json()
+    except Exception as e:
+        logging.error("**ERROR: nearby_birds() failed:")
+        logging.error("url: " + url)
+        logging.error(e)
+        return
 
-    print(body) # print the nearby birds
-    return
-
-  except Exception as e:
-    logging.error("**ERROR: trips() failed:")
-    logging.error("url: " + url)
-    logging.error(e)
-    return
 
 
 def download_trip(baseurl):
@@ -478,7 +473,9 @@ try:
     #
     if cmd == 1:
       trips(baseurl)
-    if cmd == 5:
+    elif cmd == 4:
+      nearby_birds(baseurl)
+    elif cmd == 5:
       region_birds(baseurl)
     # elif cmd == 2:
     #   jobs(baseurl)
