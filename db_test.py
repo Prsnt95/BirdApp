@@ -346,7 +346,7 @@ def download_trip(baseurl):
         # call the web service:
         #
 
-        api = '/downloadtrip/'
+        api = '/trips/'
         url = baseurl + api + tripid
         res = requests.get(url)
 
@@ -456,6 +456,8 @@ try:
     #
     if cmd == 1:
       trips(baseurl)
+    elif cmd == 3:
+       download_trip(baseurl)
     elif cmd == 4:
       nearby_birds(baseurl)
     elif cmd == 5:
