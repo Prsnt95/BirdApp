@@ -155,6 +155,9 @@ def plan_trip(baseurl):
   """
 
   try:
+    print("Enter bird name>")
+    bird_name = input()
+
     print("Enter starting address>")
     strt_addr = input()
 
@@ -164,7 +167,7 @@ def plan_trip(baseurl):
     print("Enter transportation mode: (car, bicycle, bus, transit, walk)")
     transport = input()
 
-    data = {"startaddress": strt_addr, "destaddress": dst_addr, "mode": transport}
+    data = {"birdname": bird_name, "startaddress": strt_addr, "destaddress": dst_addr, "mode": transport}
 
     #
     # call the web service:
@@ -180,10 +183,6 @@ def plan_trip(baseurl):
     #
     if res.status_code == 200: #success
       pass
-    elif res.status_code == 400: # no such user
-      body = res.json()
-      print(body)
-      return
     else:
       # failed:
       print("Failed with status code:", res.status_code)
@@ -196,13 +195,13 @@ def plan_trip(baseurl):
       return
 
     #
-    # success, extract jobid:
+    # success, extract trip:
     #
     body = res.json()
 
-    jobid = body
+    tripid = body
 
-    print("Trip created:", jobid)
+    print("Trip created:", tripid)
     return
 
   except Exception as e:
@@ -456,6 +455,8 @@ try:
     #
     if cmd == 1:
       trips(baseurl)
+    elif cmd == 2:
+       plan_trip(baseurl)
     elif cmd == 3:
        download_trip(baseurl)
     elif cmd == 4:
