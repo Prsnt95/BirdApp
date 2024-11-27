@@ -478,6 +478,8 @@ try:
     #
     if cmd == 1:
       trips(baseurl)
+    if cmd == 5:
+      region_birds(baseurl)
     # elif cmd == 2:
     #   jobs(baseurl)
     # elif cmd == 3:
