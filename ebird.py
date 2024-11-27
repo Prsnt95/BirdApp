@@ -1,5 +1,4 @@
 import requests
-import geoapify
 
 
 API_KEY = "nb5l4s4jlcl4"

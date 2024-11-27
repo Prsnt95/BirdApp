@@ -93,6 +93,6 @@ def get_distance_and_time(start_location,end_location):
         print(f"API Error: {response.status_code}")
         print(response.text)
 
-# print(get_distance_and_time(start_location,end_location))
+print(get_distance_and_time(start_location,end_location))
 
-# print(get_instructions(start_location,end_location))
+print(get_instructions(start_location,end_location))
