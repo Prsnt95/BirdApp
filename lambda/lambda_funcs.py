@@ -1,7 +1,126 @@
 ### ALL THE LAMBDA FUNCTIONS
 
+# Trip planner
+
+import json
+import boto3
+import os
+import datatier
+import requests
+from configparser import ConfigParser
+
+def lambda_handler(event, context):
+    try:
+        print("**STARTING**")
+        print("**lambda: proj_plan_trip**")
+
+        # Setup AWS based on config file
+        config_file = 'benfordapp-config.ini'
+        os.environ['AWS_SHARED_CREDENTIALS_FILE'] = config_file
+
+        configur = ConfigParser()
+        configur.read(config_file)
+
+        # Configure for RDS access
+        rds_endpoint = configur.get('rds', 'endpoint')
+        rds_portnum = int(configur.get('rds', 'port_number'))
+        rds_username = configur.get('rds', 'user_name')
+        rds_pwd = configur.get('rds', 'user_pwd')
+        rds_dbname = configur.get('rds', 'db_name')
+
+        # Accessing request body
+        print("**Accessing request body**")
+        if "body" not in event:
+            raise Exception("event has no body")
+
+        body = json.loads(event["body"])  # parse the JSON
+        if not all(key in body for key in ["birdname", "startaddress", "destaddress", "mode"]):
+            raise Exception("Missing required parameters in the request body")
+
+        bird_name = body["birdname"]
+        start_address = body["startaddress"]
+        dest_address = body["destaddress"]
+        trans_mode = body["mode"]
+
+        # Geoapify API details
+        GEOAPIFY_API_KEY = "29fd7aa975e54518a4c9f6a0c5447408"
+        GEOCODING_URL = "https://api.geoapify.com/v1/geocode/search"
+        ROUTING_URL = "https://api.geoapify.com/v1/routing"
+
+        # Geocode start and destination addresses
+        def get_coordinates(address):
+            params = {"text": address, "apiKey": GEOAPIFY_API_KEY}
+            response = requests.get(GEOCODING_URL, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                if data["features"]:
+                    coords = data["features"][0]["geometry"]["coordinates"]
+                    return coords[1], coords[0]  # Return as (lat, lon)
+                else:
+                    raise Exception(f"Could not geocode address: {address}")
+            else:
+                raise Exception(f"Geoapify Geocoding API Error: {response.status_code}")
+
+        start_coords = get_coordinates(start_address)
+        dest_coords = get_coordinates(dest_address)
+
+        # Make routing API request
+        params = {
+            "waypoints": f"{start_coords[0]},{start_coords[1]}|{dest_coords[0]},{dest_coords[1]}",
+            "mode": trans_mode,
+            "apiKey": GEOAPIFY_API_KEY
+        }
+        response = requests.get(ROUTING_URL, params=params)
+
+        if response.status_code == 200:
+            routing_data = response.json()
+            if "features" in routing_data and routing_data["features"]:
+                steps = routing_data["features"][0]["properties"]["legs"][0]["steps"]
+                instructions = "\n".join(step["instruction"]["text"] for step in steps)
+                distance = routing_data["features"][0]["properties"]["distance"] / 1000  # Convert to kilometers
+            else:
+                raise Exception("No routing data found")
+        else:
+            raise Exception(f"Geoapify Routing API Error: {response.status_code}")
+
+        # Open connection to the database
+        print("**Opening connection**")
+        dbConn = datatier.get_dbConn(rds_endpoint, rds_portnum, rds_username, rds_pwd, rds_dbname)
+
+        # Add trip to database
+        print("**Adding trip to database**")
+        sql = """
+            INSERT INTO trips (bird_name, start_loc, end_loc, trans_mode, distance, instructions)
+            VALUES (%s, %s, %s, %s, %s, %s);
+        """
+        datatier.perform_action(dbConn, sql, [bird_name, start_address, dest_address, trans_mode, distance, instructions])
+
+        # Get the generated trip ID
+        sql = "SELECT LAST_INSERT_ID();"
+        row = datatier.retrieve_one_row(dbConn, sql)
+        trip_id = row[0]
+
+        print("Trip ID:", trip_id)
+        print("bird name:", bird_name)
+        print("Start address:", start_address)
+        print("End address:", dest_address)
+        print("Instructions:", instructions)
 
 
+
+        # Return the trip ID
+        return {
+            'statusCode': 200,
+            'body': json.dumps({"trip_id": trip_id, "instructions": instructions})
+        }
+
+    except Exception as err:
+        print("**ERROR**")
+        print(str(err))
+        return {
+            'statusCode': 500,
+            'body': json.dumps({"error": str(err)})
+        }
 
 
 
