@@ -22,3 +22,7 @@ benfordapp-client-config.ini
 
 # we don't need to upload this either bruh
 .bash_history
+
+.local
+
+.cache
