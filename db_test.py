@@ -222,16 +222,22 @@ def plan_trip(baseurl):
     print("Enter bird name>")
     bird_name = input()
 
-    print("Enter starting address>")
+    print("Enter starting address in detail>")
     strt_addr = input()
 
-    print("Enter destination address>")
-    dst_addr = input()
+    #print("Enter destination address>")
+    #dst_addr = input()
+    print("Enter destination latitude>")
+    dst_lat = input()
+    
+    print("Enter destination longitude>")
+    dst_long = input()
 
     print("Enter transportation mode: (car, bicycle, bus, transit, walk)")
     transport = input()
 
-    data = {"birdname": bird_name, "startaddress": strt_addr, "destaddress": dst_addr, "mode": transport}
+    #data = {"birdname": bird_name, "startaddress": strt_addr, "destaddress": dst_addr, "mode": transport}
+    data = {"birdname": bird_name, "startaddress": strt_addr, "destlat": dst_lat,"destlong": dst_long, "mode": transport}
 
     #
     # call the web service:
