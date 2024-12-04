@@ -10,6 +10,9 @@ import sys
 import os
 import base64
 import time
+import boto3
+
+
 
 from configparser import ConfigParser
 
@@ -66,80 +69,141 @@ def prompt():
   
 
 def trips(baseurl):
-  """
-  Prints out all the trips in the database
+    """
+    Displays a summary of trips and allows the user to view details or return.
+    Users can also send an email with trip details.
 
-  Parameters
-  ----------
-  baseurl: baseurl for web service
+    Parameters
+    ----------
+    baseurl: str
+        Base URL for the web service.
 
-  Returns
-  -------
-  nothing
-  """
+    Returns
+    -------
+    None
+    """
+    try:
+        # API endpoint
+        api = '/trips'
+        url = baseurl + api
 
-  try:
-    #
-    # call the web service:
-    #
-    api = '/trips'
-    url = baseurl + api
+        # Make a request to the web service
+        res = requests.get(url)
 
-    # res = requests.get(url)
-    res = requests.get(url)
+        # Check the response status
+        if res.status_code == 200:  # Success
+            body = res.json()
+        else:  # Failure
+            print("Failed with status code:", res.status_code)
+            print("URL:", url)
+            if res.status_code == 500:
+                body = res.json()
+                print("Error message:", body.get('message', 'Unknown error'))
+            return
 
-    #
-    # let's look at what we got back:
-    #
-    if res.status_code == 200: #success
-      pass
-    else:
-      # failed:
-      print("Failed with status code:", res.status_code)
-      print("url: " + url)
-      if res.status_code == 500:
-        # we'll have an error message
-        body = res.json()
-        print("Error message:", body)
-      #
-      return
+        # Map each row into a Trip object
+        trips = [Trip(row) for row in body]
 
-    #
-    # deserialize and extract ustripsers:
-    #
-    body = res.json()
+        if not trips:
+            print("No trips available...")
+            return
 
-    #
-    # let's map each row into a Trip object:
-    #
-    trips = []
-    for row in body:
-      trip = Trip(row)
-      trips.append(trip)
-    #
-    # Now we can think OOP:
-    #
-    if len(trips) == 0:
-      print("no trips...")
-      return
+        # Display bird names and locations
+        while True:
+            print("\nAvailable Trips:\n")
+            for i, trip in enumerate(trips, start=1):
+                print(f"{i}. Bird: {trip.bird_name} | Start: {trip.start_loc} | End: {trip.end_loc}")
 
-    for trip in trips:
-      print(trip.tripid)
-      print(" ", trip.bird_name)
-      print(" ", trip.start_loc)
-      print(" ", trip.end_loc)
-      print(" ", trip.trans_mode)
-      print(" ", trip.distance)
-      print(" ", trip.instructions)
-    #
-    return
+            print("\nEnter the number of the trip for more info, or '99' to return to the main menu.")
+            user_input = input("> ")
 
-  except Exception as e:
-    logging.error("**ERROR: trips() failed:")
-    logging.error("url: " + url)
-    logging.error(e)
-    return
+            if user_input == '99':  # Exit to main menu
+                return
+
+            try:
+                trip_index = int(user_input) - 1
+                if 0 <= trip_index < len(trips):  # Valid trip selection
+                    trip = trips[trip_index]
+                    print(f"\nDetails for Trip {trip_index + 1}:")
+                    print(f"  - Bird Name: {trip.bird_name}")
+                    print(f"  - Start Location: {trip.start_loc}")
+                    print(f"  - End Location: {trip.end_loc}")
+                    print(f"  - Transportation Mode: {trip.trans_mode}")
+                    print(f"  - Distance: {trip.distance} km")
+                    print("  - Instructions:")
+                    instructions = trip.instructions.split('.')
+                    for step in instructions:
+                        if step.strip():
+                            print(f"      • {step.strip()}.")
+                    print("-" * 40)
+
+                    # Prompt to send email
+                    print("Would you like to send these details via email? (yes/no)")
+                    send_email_choice = input("> ").strip().lower()
+                    if send_email_choice == 'yes':
+                        print("Enter the recipient's email address:")
+                        recipient_email = input("> ").strip()
+                        try:
+                            send_email(trip, recipient_email)
+                            print("Email sent successfully!")
+                        except Exception as e:
+                            print(f"Failed to send email: {e}")
+                else:
+                    print("Invalid selection. Please try again.")
+            except ValueError:
+                print("Invalid input. Please enter a number corresponding to a trip or '99' to return.")
+    except Exception as e:
+        logging.error("**ERROR: trips() failed:")
+        logging.error("URL: " + url)
+        logging.error(e)
+        return
   
+def send_email(trip, recipient_email):
+    """
+    Sends an email with trip details using AWS SES.
+
+    Parameters
+    ----------
+    trip: Trip
+        A Trip object containing trip details.
+    recipient_email: str
+        The email address of the recipient.
+
+    Returns
+    -------
+    None
+    """
+    ses_client = boto3.client('ses', region_name='us-east-2')  # Update region if needed
+    
+    sender_email = "pghimire571@gmail.com"  # Replace with the SES-verified email in aws. 
+
+    # Construct email content
+    subject = f"Trip Details: {trip.bird_name}"
+    body = (
+        f"Details for Trip:\n\n"
+        f"  - Bird Name: {trip.bird_name}\n"
+        f"  - Start Location: {trip.start_loc}\n"
+        f"  - End Location: {trip.end_loc}\n"
+        f"  - Transportation Mode: {trip.trans_mode}\n"
+        f"  - Distance: {trip.distance} km\n"
+        f"\nInstructions:\n"
+        f"{trip.instructions}\n"
+    )
+    
+    # SES Email Parameters
+    email_params = {
+        'Source': sender_email,
+        'Destination': {'ToAddresses': [recipient_email]},
+        'Message': {
+            'Subject': {'Data': subject},
+            'Body': {'Text': {'Data': body}}
+        }
+    }
+
+    # Send email using SES
+    response = ses_client.send_email(**email_params)
+    return response
+
 
 def plan_trip(baseurl):
   """
@@ -263,21 +327,18 @@ def region_birds(baseurl):
   
 def nearby_birds(baseurl):
     """
-    Outputs recent bird observations nearby
+    Outputs recent bird observations nearby.
 
     Parameters
     ----------
-    baseurl: baseurl for web service
+    baseurl: str
+        Base URL for the web service.
 
     Returns
     -------
-    nothing
+    None
     """
-
     try:
-        #
-        # call the web service:
-        #
         api = '/nearbird'
         print("Enter starting address>")
         addr = input()
@@ -286,27 +347,36 @@ def nearby_birds(baseurl):
         url = f"{baseurl}{api}?address={addr}"
         res = requests.get(url)
 
-        #
-        # let's look at what we got back:
-        #
+
         if res.status_code == 200:  # Success
             body = res.json()
-            print(body)  # Print the response data
+            if body:  # Check if the response contains data
+                print("\nRecent Bird Observations Nearby:\n")
+                for i, bird in enumerate(body, start=1):
+                    print(f"Observation {i}:")
+                    print(f"  - Common Name: {bird.get('comName', 'Unknown')}")
+                    print(f"  - Scientific Name: {bird.get('sciName', 'Unknown')}")
+                    print(f"  - Location: {bird.get('locName', 'Unknown')}")
+                    print(f"  - Latitude: {bird.get('lat', 'Unknown')}")
+                    print(f"  - Longitude: {bird.get('lng', 'Unknown')}")
+                    print(f"  - Date Observed: {bird.get('obsDt', 'Unknown')}")
+                    print(f"  - Number Observed: {bird.get('howMany', 'Unknown')}")
+                    print(f"  - Location Private: {bird.get('locationPrivate', 'Unknown')}")
+                    print("-" * 40)
+            else:
+                print("No bird observations found nearby.")
         else:
-            # Failed:
+            # Handle failure
             print("Failed with status code:", res.status_code)
-            print("url: " + url)
+            print("URL:", url)
             if res.status_code == 500:
-                # we'll have an error message
                 body = res.json()
-                print("Error message:", body)
-        return
-
+                print("Error message:", body.get('message', 'Unknown error'))
     except Exception as e:
         logging.error("**ERROR: nearby_birds() failed:")
-        logging.error("url: " + url)
+        logging.error("URL: " + url)
         logging.error(e)
-        return
+
 
 #############################
 # Here's what download_trip will receive from the Lambda:
