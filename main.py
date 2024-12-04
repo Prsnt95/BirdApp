@@ -1,5 +1,5 @@
 #
-# Client-side python app for benford app, which is calling
+# Client-side python app for bird app, which is calling
 # a set of lambda functions in AWS through API Gateway.
 # The overall purpose of the app is to process a PDF and
 # see if the numeric values in the PDF adhere to Benford's

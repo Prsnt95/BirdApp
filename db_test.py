@@ -10,8 +10,6 @@ import sys
 import os
 import base64
 import time
-import requests
-import logging
 import boto3
 
 
@@ -27,7 +25,6 @@ class Trip:
     self.start_loc = row[2]
     self.end_loc = row[3]
     self.trans_mode = row[4]
-    
     self.distance = row[5]
     self.instructions = row[6]
 
@@ -208,7 +205,6 @@ def send_email(trip, recipient_email):
     return response
 
 
-
 def plan_trip(baseurl):
   """
   Prompts the user for a starting address, destination address, transportation mode
@@ -351,6 +347,7 @@ def nearby_birds(baseurl):
         url = f"{baseurl}{api}?address={addr}"
         res = requests.get(url)
 
+
         if res.status_code == 200:  # Success
             body = res.json()
             if body:  # Check if the response contains data
@@ -379,6 +376,7 @@ def nearby_birds(baseurl):
         logging.error("**ERROR: nearby_birds() failed:")
         logging.error("URL: " + url)
         logging.error(e)
+
 
 #############################
 # Here's what download_trip will receive from the Lambda:

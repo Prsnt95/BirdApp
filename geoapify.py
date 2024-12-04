@@ -92,6 +92,9 @@ def get_distance_and_time(start_location,end_location):
     else:
         print(f"API Error: {response.status_code}")
         print(response.text)
+        
+# **************************************
+# any time you import geoapify it prints this, so comment it out vvv
 
 # print(get_distance_and_time(start_location,end_location))
 
