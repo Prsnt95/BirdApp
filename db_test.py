@@ -238,7 +238,7 @@ def plan_trip(baseurl):
     transport = input()
 
     #data = {"birdname": bird_name, "startaddress": strt_addr, "destaddress": dst_addr, "mode": transport}
-    data = {"birdname": bird_name, "startaddress": strt_addr, "destlat": dst_lat,"destlong": dst_long,"destaddress": dst_addr, "mode": transport}
+    data = {"birdname": bird_name, "startaddress": strt_addr, "destlat": dst_lat,"destlon": dst_long,"destaddress": dst_addr, "mode": transport}
 
     #
     # call the web service:
