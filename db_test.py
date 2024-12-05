@@ -269,10 +269,14 @@ def plan_trip(baseurl):
     # success, extract trip:
     #
     body = res.json()
+    trip_id = body.get('trip_id')
+    instructions = body.get('instructions', '').split('\n')
 
-    tripid = body
-
-    print("Trip created:", tripid)
+    print("\nTrip Created Successfully!")
+    print(f"Trip ID: {trip_id}")
+    print("\nInstructions:")
+    for step_num, step in enumerate(instructions, start=1):
+        print(f"  {step_num}. {step}")
     return
 
   except Exception as e:
@@ -314,7 +318,18 @@ def region_birds(baseurl):
         #
         if res.status_code == 200:  # Success
             body = res.json()
-            print(body)  # Print the response data
+            if body:
+                print(f"\nRecent Bird Observations in Region: {reg}\n" + "-" * 50)
+                for bird in body:
+                    print(f"  - Common Name: {bird.get('comName', 'Unknown')}")
+                    print(f"    Scientific Name: {bird.get('sciName', 'Unknown')}")
+                    print(f"    Location: {bird.get('locName', 'Unknown')}")
+                    print(f"    Coordinates: ({bird.get('lat', 'Unknown')}, {bird.get('lng', 'Unknown')})")
+                    print(f"    **Date Observed: {bird.get('obsDt', 'Unknown')}")
+                    print(f"    Number Observed: {bird.get('howMany', 'Unknown')}\n")
+                    print("-" * 50)
+            else:
+                print("No recent bird observations found in the specified region.")
         else:
             # Failed:
             print("Failed with status code:", res.status_code)
