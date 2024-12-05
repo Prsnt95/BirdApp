@@ -1,0 +1,54 @@
+------------------------------
+id
+------------------------------
+    17
+
+------------------------------
+bird_name
+------------------------------
+    Lake Glenview, Glenview
+
+------------------------------
+start_loc
+------------------------------
+    600 foster st, Evanston, IL, 60208
+
+------------------------------
+end_loc
+------------------------------
+    Lake Glenview, Glenview
+
+------------------------------
+trans_mode
+------------------------------
+    bicycle
+
+------------------------------
+distance
+------------------------------
+    15.21
+
+------------------------------
+instructions
+------------------------------
+    Bike west on Foster Street.
+Turn right onto Orrington Avenue.
+Turn left onto Colfax Street.
+Turn right onto Sherman Avenue.
+Turn left onto Lincoln Street.
+Turn right onto Lincolnwood Drive.
+Turn left onto Harrison Street.
+Turn left onto Woods Drive.
+Turn right.
+Bear right onto Old Orchard Road Multi-Use Path.
+Turn right onto North Branch Yellow Unpaved Trail.
+Turn right onto North Branch Red Paved Trail.
+Turn left onto Glenview Road.
+Turn right onto Harlem Avenue.
+Turn left onto Washington Street.
+Turn right onto the cycleway.
+Turn left onto the cycleway.
+Turn right onto the cycleway.
+Turn left onto the cycleway.
+Your destination is on the right.
+
