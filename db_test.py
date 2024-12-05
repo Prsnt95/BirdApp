@@ -225,8 +225,9 @@ def plan_trip(baseurl):
     print("Enter starting address in detail>")
     strt_addr = input()
 
-    #print("Enter destination address>")
-    #dst_addr = input()
+    print("Enter destination location name (from output results of 4 or 5>")
+    dst_addr = input()
+    
     print("Enter destination latitude>")
     dst_lat = input()
     
@@ -237,7 +238,7 @@ def plan_trip(baseurl):
     transport = input()
 
     #data = {"birdname": bird_name, "startaddress": strt_addr, "destaddress": dst_addr, "mode": transport}
-    data = {"birdname": bird_name, "startaddress": strt_addr, "destlat": dst_lat,"destlong": dst_long, "mode": transport}
+    data = {"birdname": bird_name, "startaddress": strt_addr, "destlat": dst_lat,"destlong": dst_long,"destaddress": dst_addr, "mode": transport}
 
     #
     # call the web service:
