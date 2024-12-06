@@ -1,0 +1,9 @@
+-- CREATE TABLE trips (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     bird_name VARCHAR(255) NOT NULL,
+--     start_loc VARCHAR(255) NOT NULL,
+--     end_loc VARCHAR(255) NOT NULL,
+--     trans_mode VARCHAR(100) NOT NULL,
+--     distance FLOAT NOT NULL, 
+--     instructions TEXT NOT NULL
+-- );
