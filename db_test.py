@@ -20,12 +20,6 @@ from configparser import ConfigParser
 
 
 
-load_dotenv()  # Load variables from .env
-
-aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-aws_region = os.getenv("AWS_DEFAULT_REGION")
-
 class Trip:
 
   def __init__(self, row):
@@ -168,50 +162,39 @@ def trips(baseurl):
         return
   
 def send_email(trip, recipient_email):
-    """
-    Sends an email with trip details using AWS SES.
-
-    Parameters
-    ----------
-    trip: Trip
-        A Trip object containing trip details.
-    recipient_email: str
-        The email address of the recipient.
-
-    Returns
-    -------
-    None
-    """
-    ses_client = boto3.client('ses', region_name='us-east-2')  
-    
-    sender_email = "pghimire571@gmail.com"  # Replace with the SES-verified email in aws. 
-
-    #  email 
-    subject = f"Trip Details: {trip.bird_name}"
-    body = (
-        f"Details for Trip:\n\n"
-        f"  - Bird Name: {trip.bird_name}\n"
-        f"  - Start Location: {trip.start_loc}\n"
-        f"  - End Location: {trip.end_loc}\n"
-        f"  - Transportation Mode: {trip.trans_mode}\n"
-        f"  - Distance: {trip.distance} km\n"
-        f"\nInstructions:\n"
-        f"{trip.instructions}\n"
-    )
-    
-    # SES Email Parameters
-    email_params = {
-        'Source': sender_email,
-        'Destination': {'ToAddresses': [recipient_email]},
-        'Message': {
-            'Subject': {'Data': subject},
-            'Body': {'Text': {'Data': body}}
-        }
-    }
-
-    # Send email using SES
-    response = ses_client.send_email(**email_params)
-    return response
+   config_file = 'email-client-config.ini'
+   configur = ConfigParser()
+   configur.read(config_file)
+   email_url = configur.get('client', 'webservice')
+  
+   try:
+       trip_details = {
+           "bird_name": trip.bird_name,
+           "start_loc": trip.start_loc,
+           "end_loc": trip.end_loc,
+           "trans_mode": trip.trans_mode,
+           "distance": trip.distance,
+           "instructions": trip.instructions
+       }
+      
+       data = {
+           "recipient_email": recipient_email,
+           "trip_details": trip_details
+       }
+      
+       api = '/send_email'
+       url = email_url + api
+      
+       response = requests.post(url, json=data)
+      
+       if response.status_code == 200:
+           print("Email sent successfully!")
+       else:
+           print(f"Failed to send email. Status code: {response.status_code}")
+           print(f"Response: {response.text}")
+              
+   except Exception as e:
+       print(f"Error sending email: {str(e)}")
 
 
 def plan_trip(baseurl):
