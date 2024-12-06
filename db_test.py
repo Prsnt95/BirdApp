@@ -2,6 +2,8 @@ import requests
 import jsons
 import geoapify
 
+from dotenv import load_dotenv
+
 
 import uuid
 import pathlib
@@ -16,6 +18,13 @@ import boto3
 
 from configparser import ConfigParser
 
+
+
+load_dotenv()  # Load variables from .env
+
+aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
+aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+aws_region = os.getenv("AWS_DEFAULT_REGION")
 
 class Trip:
 
@@ -173,11 +182,11 @@ def send_email(trip, recipient_email):
     -------
     None
     """
-    ses_client = boto3.client('ses', region_name='us-east-2')  # Update region if needed
+    ses_client = boto3.client('ses', region_name='us-east-2')  
     
     sender_email = "pghimire571@gmail.com"  # Replace with the SES-verified email in aws. 
 
-    # Construct email content
+    #  email 
     subject = f"Trip Details: {trip.bird_name}"
     body = (
         f"Details for Trip:\n\n"
@@ -232,13 +241,13 @@ def plan_trip(baseurl):
     dst_lat = input()
     
     print("Enter destination longitude>")
-    dst_long = input()
+    dst_lon = input()
 
-    print("Enter transportation mode: (drive, bicycle, bus, transit, walk)")
+    print("Enter transportation mode: (car, bicycle, bus, transit, walk)")
     transport = input()
 
     #data = {"birdname": bird_name, "startaddress": strt_addr, "destaddress": dst_addr, "mode": transport}
-    data = {"birdname": bird_name, "startaddress": strt_addr, "destlat": dst_lat,"destlon": dst_long,"destaddress": dst_addr, "mode": transport}
+    data = {"birdname": bird_name, "startaddress": strt_addr, "destlat": dst_lat,"destlon": dst_lon,"destaddress": dst_addr, "mode": transport}
 
     #
     # call the web service:
@@ -269,10 +278,15 @@ def plan_trip(baseurl):
     # success, extract trip:
     #
     body = res.json()
+    trip_id = body.get('trip_id')
+    instructions = body.get('instructions', '').split('\n')
 
-    tripid = body
+    print("\nTrip Created Successfully!")
+    print(f"Trip ID: {trip_id}")
+    print("\nInstructions:")
+    for step_num, step in enumerate(instructions, start=1):
+        print(f"  {step_num}. {step}")
 
-    print("Trip created:", tripid)
     return
 
   except Exception as e:
@@ -314,7 +328,18 @@ def region_birds(baseurl):
         #
         if res.status_code == 200:  # Success
             body = res.json()
-            print(body)  # Print the response data
+            if body:
+                print(f"\nRecent Bird Observations in Region: {reg}\n" + "-" * 50)
+                for bird in body:
+                    print(f"  - Common Name: {bird.get('comName', 'Unknown')}")
+                    print(f"    Scientific Name: {bird.get('sciName', 'Unknown')}")
+                    print(f"    Location: {bird.get('locName', 'Unknown')}")
+                    print(f"    Coordinates: ({bird.get('lat', 'Unknown')}, {bird.get('lng', 'Unknown')})")
+                    print(f"    **Date Observed: {bird.get('obsDt', 'Unknown')}")
+                    print(f"    Number Observed: {bird.get('howMany', 'Unknown')}\n")
+                    print("-" * 50)
+            else:
+                print("No recent bird observations found in the specified region.")
         else:
             # Failed:
             print("Failed with status code:", res.status_code)
