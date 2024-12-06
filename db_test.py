@@ -243,7 +243,7 @@ def plan_trip(baseurl):
     print("Enter destination longitude>")
     dst_lon = input()
 
-    print("Enter transportation mode: (car, bicycle, bus, transit, walk)")
+    print("Enter transportation mode: (drive, bicycle, bus, transit, walk)")
     transport = input()
 
     #data = {"birdname": bird_name, "startaddress": strt_addr, "destaddress": dst_addr, "mode": transport}
