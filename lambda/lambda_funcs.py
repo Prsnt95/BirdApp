@@ -34,13 +34,15 @@ def lambda_handler(event, context):
             raise Exception("event has no body")
 
         body = json.loads(event["body"])  # parse the JSON
-        if not all(key in body for key in ["birdname", "startaddress", "destaddress", "mode"]):
+        if not all(key in body for key in ["birdname", "startaddress","destlat","destlon", "destaddress", "mode"]):
             raise Exception("Missing required parameters in the request body")
 
         bird_name = body["birdname"]
         start_address = body["startaddress"]
         dest_address = body["destaddress"]
         trans_mode = body["mode"]
+        dest_lat = body["destlat"]
+        dest_lon = body["destlon"]
 
         # Geoapify API details
         GEOAPIFY_API_KEY = "29fd7aa975e54518a4c9f6a0c5447408"
@@ -62,8 +64,8 @@ def lambda_handler(event, context):
                 raise Exception(f"Geoapify Geocoding API Error: {response.status_code}")
 
         start_coords = get_coordinates(start_address)
-        dest_coords = get_coordinates(dest_address)
-
+        #dest_coords = get_coordinates(dest_address)
+        dest_coords = (dest_lat, dest_lon)
         # Make routing API request
         params = {
             "waypoints": f"{start_coords[0]},{start_coords[1]}|{dest_coords[0]},{dest_coords[1]}",

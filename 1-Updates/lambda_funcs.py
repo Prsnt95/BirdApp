@@ -34,12 +34,14 @@ def lambda_handler(event, context):
             raise Exception("event has no body")
 
         body = json.loads(event["body"])  # parse the JSON
-        if not all(key in body for key in ["birdname", "startaddress", "destaddress", "mode"]):
+        if not all(key in body for key in ["birdname", "startaddress", "destlat","destlon","destaddress", "mode"]):
             raise Exception("Missing required parameters in the request body")
 
         bird_name = body["birdname"]
         start_address = body["startaddress"]
         dest_address = body["destaddress"]
+        dest_lat = body["destlat"]
+        dest_lon = body["destlon"]
         trans_mode = body["mode"]
 
         # Geoapify API details
@@ -62,8 +64,8 @@ def lambda_handler(event, context):
                 raise Exception(f"Geoapify Geocoding API Error: {response.status_code}")
 
         start_coords = get_coordinates(start_address)
-        dest_coords = get_coordinates(dest_address)
-
+        #dest_coords = get_coordinates(dest_address)
+        dest_coords = (dest_lat, dest_lon)
         # Make routing API request
         params = {
             "waypoints": f"{start_coords[0]},{start_coords[1]}|{dest_coords[0]},{dest_coords[1]}",
@@ -77,11 +79,44 @@ def lambda_handler(event, context):
             if "features" in routing_data and routing_data["features"]:
                 steps = routing_data["features"][0]["properties"]["legs"][0]["steps"]
                 instructions = "\n".join(step["instruction"]["text"] for step in steps)
-                distance = routing_data["features"][0]["properties"]["distance"] / 1000  # Convert to kilometers
+                
             else:
                 raise Exception("No routing data found")
         else:
             raise Exception(f"Geoapify Routing API Error: {response.status_code}")
+
+        #####################################################
+        ##Computing the distance between starting and destination addresses
+        ##############################################
+        import math
+        lat1 = start_coords[0]
+        lat2 = dest_coords[0]
+        lon1 = start_coords[1]
+        lon2 = dest_coords[1]
+        
+        def haversine(lat1, lon1, lat2, lon2):
+            #3 Converting degrees to radians
+            lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+
+            # Applying the Haversine formula
+            #https://en.wikipedia.org/wiki/Haversine_formula
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+            a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+            #Volumetric mean radius of earth(km)
+            #https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html
+
+            R = 6371.0
+            distance = R * c
+            return distance
+        
+        
+        distance = haversine(lat1, lon1, lat2, lon2)
+        
+        
+        ####################################################
 
         # Open connection to the database
         print("**Opening connection**")
@@ -93,6 +128,7 @@ def lambda_handler(event, context):
             INSERT INTO trips (bird_name, start_loc, end_loc, trans_mode, distance, instructions)
             VALUES (%s, %s, %s, %s, %s, %s);
         """
+        
         datatier.perform_action(dbConn, sql, [bird_name, start_address, dest_address, trans_mode, distance, instructions])
 
         # Get the generated trip ID
@@ -366,6 +402,11 @@ def lambda_handler(event, context):
             }
 
         ebird_data = ebird_response.json()
+        #############################################################
+        ######sort by number of observations (decreasing order)
+        #############################################################
+        ebird_data = sorted(ebird_data, key=lambda x: x["howMany"], reverse=True)
+
         print(f"Fetched eBird data: {ebird_data}")
 
         # Step 3: Return the eBird data as the response
@@ -431,6 +472,42 @@ def lambda_handler(event, context):
                 "statusCode": response.status_code,
                 "body": json.dumps({"error": "Failed to fetch data from eBird"})
             }
+
+        ################################################################
+        ### compute durations between the observation and 
+        ##the time of request and filter out observations from over 24 hours ago
+        ####################################################################
+        from datetime import datetime, timedelta
+        #get time now, the time of request
+        now = datetime.now()
+
+        def calculate_duration(observation_time):
+            observed_time = datetime.strptime(observation_time, "%Y-%m-%d %H:%M")
+            duration = now - observed_time
+            return duration
+
+        max_duration = timedelta(hours=24)
+
+        valid_observations = []
+        for observation in data:
+            observation_time = observation["obsDt"]
+            duration = calculate_duration(observation_time)
+            if duration < max_duration:
+                valid_observations.append(observation)
+        data = valid_observations
+
+
+        ###################################################
+        ##### sort the observation by the most recent
+        ##################################################
+
+        from datetime import datetime
+        ## making sure the string of datetime follows datetime object definition
+        # so we can run computations
+        def parse_datetime(observation):
+            return datetime.strptime(observation["obsDt"], "%Y-%m-%d %H:%M")
+
+        data= sorted(data, key=lambda x: x["obsDt"], reverse=True)
 
         # Return the eBird data as the response
         return {

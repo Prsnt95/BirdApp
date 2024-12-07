@@ -297,7 +297,7 @@ def region_birds(baseurl):
         # call the web service:
         #
         api = '/regionbird'
-        print("Enter region>")
+        print("Enter region (e.g. US-IL)>")
         reg = input()
 
         # Construct the full URL with query parameters
