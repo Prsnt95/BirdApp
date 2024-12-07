@@ -446,3 +446,85 @@ def lambda_handler(event, context):
             'body': json.dumps({"error": str(err)})
         }
 
+
+
+
+
+## Send Email
+import json
+import boto3
+import os
+from configparser import ConfigParser
+
+def lambda_handler(event, context):
+    try:
+        
+        # config file setup:
+
+        config_file = 'benfordapp-config.ini'
+        os.environ['AWS_SHARED_CREDENTIALS_FILE'] = config_file
+        
+        configur = ConfigParser()
+        configur.read(config_file)
+        
+    #    Ses acess
+        ses_region = configur.get('ses', 'region')
+        sender_email = configur.get('ses', 'sender_email')
+        
+    
+        print("**Parsing request data**")
+        body = json.loads(event['body'])
+        recipient_email = body['recipient_email']
+        trip_details = body['trip_details']
+        
+    
+        ses_client = boto3.client('ses', region_name=ses_region)
+        
+        #
+        # Prepare email content
+        #
+        subject = f"Trip Details: {trip_details['bird_name']}"
+        body_text = (
+            f"Details for Trip:\n\n"
+            f"  - Bird Name: {trip_details['bird_name']}\n"
+            f"  - Start Location: {trip_details['start_loc']}\n"
+            f"  - End Location: {trip_details['end_loc']}\n"
+            f"  - Transportation Mode: {trip_details['trans_mode']}\n"
+            f"  - Distance: {trip_details['distance']} km\n"
+            f"\nInstructions:\n"
+            f"{trip_details['instructions']}\n"
+        )
+        
+    
+        # Send email
+        
+        response = ses_client.send_email(
+            Source=sender_email,
+            Destination={
+                'ToAddresses': [recipient_email]
+            },
+            Message={
+                'Subject': {'Data': subject},
+                'Body': {'Text': {'Data': body_text}}
+            }
+        )
+        
+        print("DONE, email sent successfully")
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'message': 'Email sent successfully',
+                'messageId': response['MessageId']
+            })
+        }
+        
+    except Exception as err:
+        print("**ERROR**")
+        print(str(err))
+        
+        return {
+            'statusCode': 500,
+            'body': json.dumps(str(err))
+        }
+
